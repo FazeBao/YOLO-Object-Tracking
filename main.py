@@ -5,7 +5,7 @@ from flask import Flask, request, render_template, jsonify, url_for
 from werkzeug.utils import secure_filename
 from ultralytics import YOLO
 
-main = Flask(__name__)
+main = Flask(__name__, template_folder='.')
 
 # --- CẤU HÌNH ĐƯỜNG DẪN ---
 UPLOAD_FOLDER = 'static/uploads'
