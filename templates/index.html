@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO Object Tracking Web</title>
+    <style>
+        /* CSS Reset & Cơ bản */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a; /* Nền tối */
+            color: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+
+        /* Tiêu đề trang */
+        .page-header {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Khung chung cho các khối */
+        .card {
+            background-color: #1e293b;
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+        }
+
+        .card h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 22px;
+            color: #f1f5f9;
+        }
+
+        /* Khu vực tải file */
+        .upload-zone {
+            border: 2px dashed #475569;
+            border-radius: 8px;
+            padding: 30px 20px;
+            text-align: center;
+            background-color: #0f172a;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .upload-zone:hover {
+            border-color: #3b82f6;
+            background-color: #1e293b;
+        }
+        
+        /* Ẩn input file mặc định */
+        #mediaFile {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon { font-size: 32px; margin-bottom: 10px; }
+        .upload-text { color: #cbd5e1; margin-bottom: 15px; font-size: 15px;}
+        
+        .btn-secondary {
+            background-color: #334155;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            border: 1px solid #475569;
+            pointer-events: none; /* Để click xuyên qua label chạm vào input */
+        }
+
+        /* Hiển thị tên file đã chọn */
+        .file-preview-box {
+            background-color: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #334155;
+            color: #94a3b8;
+        }
+
+        /* Nút Xử lý */
+        .btn-primary {
+            background-color: #10b981; 
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 250px;
+            margin: 25px auto 0;
+            display: block;
+            transition: background-color 0.2s;
+        }
+        .btn-primary:hover { background-color: #059669; }
+        .btn-primary:disabled { background-color: #64748b; cursor: not-allowed; }
+
+        /* Khu vực Kết quả */
+        .result-card h3 {
+            text-align: center;
+            font-size: 18px;
+            color: #e2e8f0;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .result-desc {
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .result-container {
+            border: 2px dashed #475569;
+            border-radius: 8px;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #0f172a;
+            padding: 10px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        .result-container img, .result-container video {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        🚁 TRANG WEB TRACKING UAV
+    </div>
+
+    <!-- KHUNG TẢI LÊN -->
+    <div class="card">
+        <h2>Tải Lên và Xử Lý Tracking</h2>
+        
+        <form id="uploadForm">
+            <!-- Khu vực kéo thả / chọn file -->
+            <div class="upload-zone">
+                <input type="file" id="mediaFile" name="file" accept="image/*,video/*" required>
+                <div class="upload-icon">☁️</div>
+                <div class="upload-text">Kéo thả hoặc Bấm vào đây để chọn file ảnh/video...</div>
+                <div class="btn-secondary">Chọn tệp...</div>
+            </div>
+
+            <!-- Nơi hiển thị tên file vừa chọn -->
+            <div class="file-preview-box">
+                <span>🖼️</span>
+                <span id="fileNameDisplay">Chưa chọn tệp nào</span>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-primary">XỬ LÝ NGAY</button>
+        </form>
+    </div>
+
+    <!-- KHUNG KẾT QUẢ -->
+    <div class="card result-card">
+        <h3>Bản xem trước / Kết quả</h3>
+        <p class="result-desc">Kết quả tracking UAV (bounding box) sẽ được hiển thị tại đây.</p>
+        
+        <div id="resultArea" class="result-container">
+            <div>
+                <div style="font-size: 30px; margin-bottom: 10px;">🛸</div>
+                <span id="resultPlaceholderText">Đang chờ dữ liệu...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('mediaFile');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const uploadForm = document.getElementById('uploadForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const resultArea = document.getElementById('resultArea');
+        const resultPlaceholderText = document.getElementById('resultPlaceholderText');
+
+        // JS để hiển thị tên file khi người dùng chọn xong
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files.length > 0) {
+                fileNameDisplay.textContent = this.files[0].name;
+                fileNameDisplay.style.color = '#e2e8f0';
+            } else {
+                fileNameDisplay.textContent = 'Chưa chọn tệp nào';
+                fileNameDisplay.style.color = '#94a3b8';
+            }
+        });
+
+        // Xử lý khi bấm nút "XỬ LÝ NGAY"
+        uploadForm.onsubmit = async function(e) {
+            e.preventDefault(); // Chặn tải lại trang
+            
+            let file = fileInput.files[0];
+            if (!file) return;
+
+            let formData = new FormData();
+            formData.append("file", file);
+
+            // Cập nhật giao diện sang trạng thái Đang tải (Loading)
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ ĐANG XỬ LÝ...';
+            resultArea.innerHTML = `
+                <div>
+                    <div style="font-size: 30px; margin-bottom: 10px;">⚙️</div>
+                    <span>Hệ thống AI đang chạy, vui lòng chờ...</span>
+                </div>
+            `;
+
+            try {
+                // Gọi API backend (Giữ nguyên logic của bạn)
+                let response = await fetch('/upload', { method: 'POST', body: formData });
+                let result = await response.json();
+
+                if (result.error) {
+                    alert('Lỗi: ' + result.error);
+                    resetResultArea('Có lỗi xảy ra trong quá trình xử lý!');
+                } else {
+                    // Xóa style padding mặc định của container kết quả để ảnh/video chiếm trọn
+                    resultArea.style.padding = "0";
+                    resultArea.style.border = "none";
+
+                    if (result.type === 'image') {
+                        resultArea.innerHTML = `<img src="${result.url}" alt="Kết quả Tracking">`;
+                    } else if (result.type === 'video') {
+                        resultArea.innerHTML = `<video src="${result.url}" controls autoplay loop></video>`;
+                    }
+                }
+            } catch (err) {
+                alert('Đã xảy ra lỗi kết nối với server!');
+                resetResultArea('Lỗi kết nối. Vui lòng thử lại!');
+            } finally {
+                // Phục hồi lại nút bấm sau khi chạy xong hoặc lỗi
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'XỬ LÝ NGAY';
+            }
+        };
+
+        // Hàm hỗ trợ reset khung kết quả khi lỗi
+        function resetResultArea(msg) {
+            resultArea.style.padding = "10px";
+            resultArea.style.border = "2px dashed #475569";
+            resultArea.innerHTML = `
+                <div>
+                    <div style="font-size: 30px; margin-bottom: 10px;">⚠️</div>
+                    <span>${msg}</span>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
